@@ -28,7 +28,7 @@ def isHtmlString(item):
 ###############Entity extraction code####################
 
 #find entity set in left and right pattern.
-def getAllEntitiesInsideLeftRightPattern(pageContent, leftPattern, rightPattern):
+def getAllEntitiesInsideLeftRightPattern(pageContent, leftPattern, rightPattern, threshold=1000):
     output = []
     leftPattern  = getRegExpStarBack(re.escape(removeRegExpStar(leftPattern)))
     rightPattern = getRegExpStarBack(re.escape(removeRegExpStar(rightPattern)))
@@ -37,13 +37,13 @@ def getAllEntitiesInsideLeftRightPattern(pageContent, leftPattern, rightPattern)
         rpLoc = re.search(rightPattern, pageContent[endL:])
         if not rpLoc is None:
             element = pageContent[endL:endL+rpLoc.start()]
-            if len(element)<=1000:
+            if len(element)<=threshold:
                 output.append(element.strip())
     return list(set(output))
 ###############Entity extraction code ends here##############
 #############################################################
 
-def getAllRelations(leftPattern, middlePattern, rightPattern, pageContent):
+def getAllRelations(leftPattern, middlePattern, rightPattern, pageContent, key_threshold=1000, value_threshold=1000):
     searchIndex = 0
     output = []
     mp = middlePattern
@@ -58,20 +58,39 @@ def getAllRelations(leftPattern, middlePattern, rightPattern, pageContent):
             startM = endL + mLoc.start()
             endM   = endL + mLoc.end()
             key    = pageContent[endL:startM].strip()
-            print("Key is ")
-            print(key)
-            print(rp)
-            print(pageContent[endM:endM+300])
+            # print("Key is ")
+            # print(key)
+            # print(rp)
+            # print(pageContent[endM:endM+300])
             rLoc = re.search(rightPattern, pageContent[endM:])
             if not rLoc is None:
                 startR = endM + rLoc.start()
                 # endR   = endM + rLoc.end()
                 value  = pageContent[endM:startR].strip()
-                if len(key) <= 1000 and len(value) <= 1000 and not isHtmlString(key+value):
+                if len(key) <= key_threshold and len(value) <= value_threshold and not isHtmlString(key+value):
                     output.append((key, value))
     return list(set(output))
 
-def getClusterInsideLeftRightPattern(pageContent, leftPattern, insidePattern, rightPattern):
+from bs4 import BeautifulSoup
+#return ''.join(BeautifulSoup(htmlTxt).findAll(text=True))
+# from bs4 import BeautifulSoup
+#
+# soup = BeautifulSoup(html)
+# text = soup.get_text()
+# print(text)
+
+def withoutHtml(s):
+    return ''.join(BeautifulSoup(s).findAll(text=True)).encode('utf-8').strip()
+
+def isClusterOnlyHtmlUnderLengthThrehold(cluster, threshold):
+    cluster = cluster.strip()
+    if len(cluster)>threshold:
+        return False
+    if withoutHtml(cluster)==cluster:
+        return True
+    return True
+
+def getClusterInsideLeftRightPattern(pageContent, leftPattern, insidePattern, rightPattern, threshold=30000):
     output = []
     leftPattern   = getRegExpStarBack(re.escape(removeRegExpStar(leftPattern)))
     insidePattern = getRegExpStarBack(re.escape(removeRegExpStar(insidePattern)))
@@ -81,7 +100,9 @@ def getClusterInsideLeftRightPattern(pageContent, leftPattern, insidePattern, ri
         rpLoc = re.search(rightPattern, pageContent[endL:])
         if not rpLoc is None:
             cluster = pageContent[endL:endL+rpLoc.start()]
-            if len(cluster)<=30000 and not re.search(insidePattern, cluster) is None:
+            if len(cluster)<=threshold and not re.search(insidePattern, cluster) is None:
+                output.append(cluster)
+            if isClusterOnlyHtmlUnderLengthThrehold(cluster, threshold)==True:
                 output.append(cluster)
     return list(set(output))
 

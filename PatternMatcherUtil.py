@@ -7,7 +7,7 @@ def extractProductTitle(pageContent, numPageContent, titlePattern):
     (leftTitlePattern, rightTitlePattern, patternType) = titlePattern
     if patternType == "NUM":
         pageContent = numPageContent
-    return getAllEntitiesInsideLeftRightPattern(pageContent, leftTitlePattern, rightTitlePattern)
+    return getAllEntitiesInsideLeftRightPattern(pageContent, leftTitlePattern, rightTitlePattern, 1000)
 
 
 def extractProductTitles(pageContent, numPageContent, titlePatterns):
@@ -22,6 +22,8 @@ def extractProductSpec(pageContent, numPageContent, productSpecsPattern):
     if patternType == "NUM":
         pageContent = numPageContent
     found = getClusterInsideLeftRightPattern(pageContent, leftSpecsPattern, insideSpecsPattern, rightSpecsPattern)
+    # print("Found is ")
+    # print(found)
     totalFound = []
     for cluster in found:
         clusterItems = getElementsOfCluster(cluster, insideSpecsPattern)
